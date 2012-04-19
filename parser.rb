@@ -296,6 +296,105 @@ class DiceRoller
     end
   end
 end
+#-------------------------------------------------------------------
+
+class AdditionNode
+  def initialize(op, a, b)
+    @op, @a, @b = op, a, b
+  end
+
+  def evaluate
+    eval("#{@a.evaluate}#{@op}#{@b.evaluate}")
+  end
+end
+
+class MultiNode
+  def initialize(op, a, b)
+    @op, @a, @b = op, a, b
+  end
+
+  def evaluate
+    eval("#{@a.evaluate}#{@op}#{@b.evaluate}")
+  end
+end
+
+class IntegerNode
+  def initialize(a)
+    @a = a
+  end
+
+  def evaluate
+    @a
+  end
+end
+
+class Skywalker
+  def initialize
+    @skywalker = Parser.new("skywalker") do
+      token(/\s+/)
+      token(/\d+/) {|m| m.to_i }
+      token(/./) {|m| m }
+      
+      start :addition do
+        match(:multi)
+        match(:addition, :addition_oper, :multi) {|a, c, b| AdditionNode.new(c, a, b) }
+      end
+      
+      rule :multi do
+        match(:primary)
+        match(:multi, :multi_oper, :multi) {|a, c, b| MultiNode.new(c, a, b) }
+      end
+      
+      rule :primary do
+        match("(", :addition, ")") {|_, a, _| a }
+        match(:atom)
+      end
+      
+      rule :atom do
+        match(Integer) {|a| IntegerNode.new(a) }
+        match(Float)
+        match(:identifier)
+      end
+      
+      rule :addition_oper do
+        match("+") {|a| a}
+        match("-") {|a| a}
+      end
+
+      rule :multi_oper do
+        match("*") {|a| a}
+        match("/") {|a| a}
+      end
+
+      rule :identifier do
+        match(/[a-zA-Z]+/)
+      end
+    end
+  end
+
+  def done(str)
+    ["quit","exit","bye",""].include?(str.chomp)
+  end
+  
+  def run
+    print "[skywalker] "
+    str = gets
+    if done(str) then
+      puts "Bye."
+    else
+      puts "=> #{(@skywalker.parse str).evaluate}"
+      run
+    end
+  end
+
+  def log(state = true)
+    if state
+      @diceParser.logger.level = Logger::DEBUG
+    else
+      @diceParser.logger.level = Logger::WARN
+    end
+  end
+end
 
 # Examples of use
 
