@@ -328,6 +328,33 @@ class IntegerNode
   end
 end
 
+class FloatNode
+  def initialize(a)
+    @a = a
+  end
+
+  def evaluate
+    @a
+  end
+end
+
+class IdentifierNode
+  @@vars = {}
+  attr_accessor :vars
+  
+  def initialize(a,b)
+    @a, @b = a, b
+  end
+
+  def evaluate
+    @@vars[@a] = @b
+  end
+
+  def retur(a)
+    @@vars[a]
+  end
+end
+
 class Skywalker
   def initialize
     @skywalker = Parser.new("skywalker") do
@@ -335,7 +362,12 @@ class Skywalker
       token(/\d+/) {|m| m.to_i }
       token(/./) {|m| m }
       
-      start :addition do
+      start :derp do
+        match(:assign_stmt)
+        match(:addition)
+      end
+
+      rule :addition do
         match(:multi)
         match(:addition, :addition_oper, :multi) {|a, c, b| AdditionNode.new(c, a, b) }
       end
@@ -351,8 +383,8 @@ class Skywalker
       end
       
       rule :atom do
+        match(Integer, ".", Integer) {|a| FloatNode.new(a) }
         match(Integer) {|a| IntegerNode.new(a) }
-        match(Float)
         match(:identifier)
       end
       
@@ -367,8 +399,13 @@ class Skywalker
       end
 
       rule :identifier do
-        match(/[a-zA-Z]+/)
+        match(/[a-zA-Z]+/) {|a| IdentifierNode.vars[a] }
       end
+
+      rule :assign_stmt do
+        match(/[a-zA-Z]+/, "=", :addition) {|a, _, b| IdentifierNode.new(a,b) }
+      end
+      
     end
   end
 
