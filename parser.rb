@@ -1,5 +1,10 @@
 #!/usr/bin/env ruby
 
+
+@@vars = {}
+
+
+
 # 2010-02-11 New version of this file for the 2010 instance of TDP007
 #   which handles false return values during parsing, and has an easy way
 #   of turning on and off debug messages.
@@ -129,6 +134,13 @@ class Parser
     @start = nil
     @language_name = language_name
     instance_eval(&block)
+  end
+
+  
+
+  def assignVariable(a,b)
+    @@vars[a] = b
+    IdentifierNode.new(a)
   end
   
   # Tokenize the string into small pieces
@@ -339,19 +351,16 @@ class FloatNode
 end
 
 class IdentifierNode
-  @@vars = {}
-  attr_accessor :vars
-  
-  def initialize(a,b)
-    @a, @b = a, b
+  def initialize(a)
+    @a = a
   end
 
   def evaluate
-    @@vars[@a] = @b
+    @@vars[@a].evaluate
   end
 
-  def retur(a)
-    @@vars[a]
+  def val
+    @a
   end
 end
 
@@ -399,11 +408,11 @@ class Skywalker
       end
 
       rule :identifier do
-        match(/[a-zA-Z]+/) {|a| IdentifierNode.vars[a] }
+        match(/[a-zA-Z]+/) {|a| IdentifierNode.new(a) }
       end
 
       rule :assign_stmt do
-        match(/[a-zA-Z]+/, "=", :addition) {|a, _, b| IdentifierNode.new(a,b) }
+        match(/[a-zA-Z]+/, "=", :addition) {|a, _, b| assignVariable(a,b) }
       end
       
     end
