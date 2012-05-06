@@ -1,20 +1,11 @@
 routine Main
-	a = 10;
-	b = 100;
-
-	if(a < 10)
-		b = 0
+	controll = 0;
+	Motor = 75;
+	while(controll < 2)
+		wait(5*0.75/2);
+		Servo = 100;
+		wait(0.5);
+		Servo = 0
 	end;
-
-	if(b > 50)
-		c = a + b
-	end;
-	
-	while(a < 20)
-		a = a + 1
-	end;	
-	
-	d = c - a;
-
-	d;
+	Motor = 0
 end
