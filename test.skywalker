@@ -5,7 +5,8 @@ routine Main
 		wait(5*0.75/2);
 		Servo = 100;
 		wait(0.5);
-		Servo = 0
+		Servo = 0;
+		controll = controll + 1
 	end;
 	Motor = 0
 end
