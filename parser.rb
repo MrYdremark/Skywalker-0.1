@@ -1,9 +1,11 @@
 #!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
 
 
 @@vars = {}
-
-
+@@res = ""
+@@tmp = ""
+@@i = 0
 
 # 2010-02-11 New version of this file for the 2010 instance of TDP007
 #   which handles false return values during parsing, and has an easy way
@@ -134,13 +136,6 @@ class Parser
     @start = nil
     @language_name = language_name
     instance_eval(&block)
-  end
-
-  
-
-  def assignVariable(a,b)
-    @@vars[a] = b
-    IdentifierNode.new(a)
   end
   
   # Tokenize the string into small pieces
@@ -318,6 +313,10 @@ class AdditionNode
   def evaluate
     eval("#{@a.evaluate}#{@op}#{@b.evaluate}")
   end
+
+  def debug
+    " -> AdditionNode(#{@a.debug} #{@op} #{@b.debug})"
+  end
 end
 
 class MultiNode
@@ -327,6 +326,10 @@ class MultiNode
 
   def evaluate
     eval("#{@a.evaluate}#{@op}#{@b.evaluate}")
+  end
+
+  def debug
+    " -> MultiNode(#{@a.debug} #{@op} #{@b.debug})"
   end
 end
 
@@ -338,6 +341,10 @@ class IntegerNode
   def evaluate
     @a
   end
+
+  def debug
+    " -> IntegerNode(#{@a})"
+  end
 end
 
 class FloatNode
@@ -348,6 +355,86 @@ class FloatNode
   def evaluate
     @a
   end
+
+  def debug
+    " -> FloatNode(#{@a})"
+  end
+end
+
+class AssignNode
+  def initialize(a,b)
+    @a = a
+    @b = b
+  end
+
+  def evaluate
+    c = @b.evaluate
+    assignVariable(@a,c)
+  end
+
+  def debug
+    c = @b.evaluate
+    " -> AssignNode(#{assignVariable(@a,c)})"
+  end
+
+  def assignVariable(a,b)
+    @@vars[a] = b
+  end
+end
+
+class IfElseNode
+  def initialize(a, b)
+    @bool = a
+    @stmt = b
+  end
+
+  def evaluate
+    if @bool.evaluate
+      @stmt.evaluate
+    else
+      nil
+    end
+  end
+
+  def debug
+    " -> If -> Bool(#{@bool.debug}) then -> #{@stmt.debug}"
+    nil
+  end
+end
+
+class WhileNode
+  def initialize(a, b)
+    @bool = a
+    @stmt = b
+  end
+
+  def evaluate
+    while(true)
+      if @bool.evaluate
+        @stmt.evaluate
+      else
+        break
+      end
+    end
+  end
+
+  def debug
+    " -> While -> Bool(#{@bool.debug} do -> #{@stmt.debug})"
+  end
+end
+
+class WaitNode
+  def initialize(a)
+    @a = a
+  end
+
+  def evaluate
+    sleep @a.evaluate
+  end
+
+  def debug
+    " -> wait #{@a.debug} sek"
+  end
 end
 
 class IdentifierNode
@@ -356,11 +443,63 @@ class IdentifierNode
   end
 
   def evaluate
-    @@vars[@a].evaluate
+    @@vars[@a]
+  end
+  
+  def debug
+    " -> IdentifierNode(#{@a}) = (#{@@vars[@a]})"
+  end
+end
+
+class BooleanNode
+  def initialize(a, b, c)
+    @a = a
+    @b = b
+    @c = c
   end
 
-  def val
-    @a
+  def evaluate
+    eval("#{@a.evaluate}#{@b}#{@c.evaluate}")
+  end
+
+  def debug
+    " -> Bool(#{@a.evaluate}#{@b}#{@c.evaluate})"
+  end
+end
+
+class Dummy
+  def initialize
+    nil
+  end
+  def evaluate
+    ""
+  end
+end
+
+class StmtNode
+  def initialize(a)
+    @a = a
+  end
+  
+  def evaluate
+    @a.evaluate
+  end
+  
+  def debug
+    " -> StmtNode(#{@a.debug})"
+  end
+end
+
+class StmtListNode < Array
+  def initialize
+  end
+  def evaluate
+    self.each {|a| a.evaluate }
+    self[-1].evaluate
+  end
+
+  def debug
+    self.each {|a| puts "StmtListNode #{a.debug} \n"}
   end
 end
 
@@ -368,12 +507,30 @@ class Skywalker
   def initialize
     @skywalker = Parser.new("skywalker") do
       token(/\s+/)
+      token(/\d+\.\d+/) {|m| m.to_f }
       token(/\d+/) {|m| m.to_i }
+      token(/\w+/) {|m| m }
       token(/./) {|m| m }
       
-      start :derp do
+      start :start do
+        match("routine", "Main", :derp, "end") {|_, _, a, _| a }
+      end
+      
+      rule :derp do
+        match(:stmt_list) {|a| a }
+      end
+
+      rule :stmt_list do
+        match(:stmt) {|a| StmtListNode.new << StmtNode.new(a)}
+        match(:stmt_list, ";", :stmt) {|a, _, b| a << StmtNode.new(b)}
+      end
+
+      rule :stmt do
+        match(:if_else_stmt) {|a| a}
+        match(:while_stmt) {|a| a}
         match(:assign_stmt)
-        match(:addition)
+        match(:wait_stmt)
+        match(:addition) {|a| a}
       end
 
       rule :addition do
@@ -392,9 +549,19 @@ class Skywalker
       end
       
       rule :atom do
-        match(Integer, ".", Integer) {|a| FloatNode.new(a) }
+        match(Float) {|a| FloatNode.new(a) }
         match(Integer) {|a| IntegerNode.new(a) }
-        match(:identifier)
+        match(:identifier)        
+        match(";")
+      end
+
+      rule :boolean do
+        match("true") {|a| a}
+        match("false") {|a| a}
+      end
+          
+      rule :terminator do
+        match("end") {|a| a}
       end
       
       rule :addition_oper do
@@ -407,12 +574,41 @@ class Skywalker
         match("/") {|a| a}
       end
 
+      rule :rel_oper do
+        match("==")
+        match("!=")
+        match("<=")
+        match(">=")
+        match("<")
+        match(">")
+      end
+
+      rule :bool_expr do
+        match(:boolean) {|a| BooleanNode.new(Dummy.new, a, Dummy.new)}
+        match(:addition, :rel_oper, :multi) {|a, b, c| BooleanNode.new(a, b, c) }
+      end
+      
+      
+      rule :if_else_stmt do
+        match("if", "(", :bool_expr, ")", :stmt_list, :terminator) {|_, _, a, _, b, _|
+          IfElseNode.new(a,b) }
+      end
+
+      rule :while_stmt do
+        match("while", "(", :bool_expr, ")", :stmt_list, :terminator) {|_, _, a, _, b, _|
+          WhileNode.new(a,b) }
+      end
+
+      rule :wait_stmt do
+        match("wait", "(", :addition, ")") {|_, _, a, _| WaitNode.new(a)}
+      end
+      
       rule :identifier do
-        match(/[a-zA-Z]+/) {|a| IdentifierNode.new(a) }
+        match(/\w/) {|a| IdentifierNode.new(a) }
       end
 
       rule :assign_stmt do
-        match(/[a-zA-Z]+/, "=", :addition) {|a, _, b| assignVariable(a,b) }
+        match(/\w/, "=", :addition) {|a, _, b| AssignNode.new(a,b) }
       end
       
     end
@@ -428,16 +624,24 @@ class Skywalker
     if done(str) then
       puts "Bye."
     else
-      puts "=> #{(@skywalker.parse str).evaluate}"
+      @@res = (@skywalker.parse str)
+      puts "=> #{@@res.evaluate}"
+      # @skywalker.parse(str)
       run
     end
   end
 
-  def log(state = true)
+  def runfile(filename)
+    code = File.read(filename)
+    @@res = (@skywalker.parse code)
+    puts "=> #{@@res.evaluate}"
+  end
+
+  def log(state = false)
     if state
-      @diceParser.logger.level = Logger::DEBUG
+      @skywalker.logger.level = Logger::DEBUG
     else
-      @diceParser.logger.level = Logger::WARN
+      @skywalker.logger.level = Logger::WARN
     end
   end
 end
