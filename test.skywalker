@@ -1,12 +1,13 @@
 routine Main
 	controll = 0;
-	Motor = 75;
+	motor = 75;
 	while(controll < 2)
-		wait(5*0.75/2);
-		Servo = 100;
+		wait(5*1.75/2);
+		servo = 100;
 		wait(0.5);
-		Servo = 0;
+		servo = 0;
 		controll = controll + 1
 	end;
-	Motor = 0
+	motor = 0;
+	controll
 end

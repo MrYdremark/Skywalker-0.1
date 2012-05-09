@@ -1,0 +1,45 @@
+#!/bin/env/ruby
+
+require 'curses'
+
+@@vars = {"a" => 1, "b" => 2, "c" => 3}
+
+Curses.init_screen()
+
+@@win = Curses::Window.new(0, 0, 0, 0)
+
+def skywalker_update
+  @@win.setpos(0,0)
+  @@win << "Skywalker demo uber alles!! :D \n\n"
+  @@vars.each {|a, b| @@win << "Variable #{a}: #{b} \n" }
+  @@win.refresh
+end
+
+def skywalker_end
+  @@win << "\nDone!"
+  @@win.refresh
+  @@win.getch
+  @@win.close
+end
+
+def main
+  @@vars["a"] = 5
+  skywalker_update
+  sleep(1)
+  @@vars["b"] = 79
+  @@vars["a"] = 54
+  skywalker_update
+  sleep(2)
+  @@vars["b"] = 39
+  @@vars["a"] = 57
+  @@vars["c"] = 13
+  skywalker_update
+  sleep(3)
+  @@vars["b"] = 1
+  @@vars["a"] = 2
+  @@vars["c"] = 3
+  skywalker_update
+  skywalker_end
+end
+
+main

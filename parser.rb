@@ -317,6 +317,10 @@ class AdditionNode
   def debug
     " -> AdditionNode(#{@a.debug} #{@op} #{@b.debug})"
   end
+
+  def compile
+    "#{@a.compile} #{@op} #{@b.compile}"
+  end
 end
 
 class MultiNode
@@ -330,6 +334,10 @@ class MultiNode
 
   def debug
     " -> MultiNode(#{@a.debug} #{@op} #{@b.debug})"
+  end
+
+  def compile
+    "#{@a.compile} #{@op} #{@b.compile}"
   end
 end
 
@@ -345,6 +353,10 @@ class IntegerNode
   def debug
     " -> IntegerNode(#{@a})"
   end
+
+  def compile
+    "#{@a}"
+  end
 end
 
 class FloatNode
@@ -358,6 +370,10 @@ class FloatNode
 
   def debug
     " -> FloatNode(#{@a})"
+  end
+
+  def compile
+    "#{@a}"
   end
 end
 
@@ -380,6 +396,10 @@ class AssignNode
   def assignVariable(a,b)
     @@vars[a] = b
   end
+
+  def compile
+    "#{@a} = #{@b.compile}\n@@vars[\"#{@a}\"] = #{@b.compile}"
+  end
 end
 
 class IfElseNode
@@ -399,6 +419,10 @@ class IfElseNode
   def debug
     " -> If -> Bool(#{@bool.debug}) then -> #{@stmt.debug}"
     nil
+  end
+
+  def compile
+    "if (#{@bool})\n#{@stmt}\nend"
   end
 end
 
@@ -421,6 +445,10 @@ class WhileNode
   def debug
     " -> While -> Bool(#{@bool.debug} do -> #{@stmt.debug})"
   end
+
+  def compile
+    "while(#{@bool.compile})\n#{@stmt.compile}\nend"
+  end
 end
 
 class WaitNode
@@ -435,6 +463,10 @@ class WaitNode
   def debug
     " -> wait #{@a.debug} sek"
   end
+
+  def compile
+    "skywalker_update\nsleep(#{@a.compile})"
+  end
 end
 
 class IdentifierNode
@@ -448,6 +480,10 @@ class IdentifierNode
   
   def debug
     " -> IdentifierNode(#{@a}) = (#{@@vars[@a]})"
+  end
+
+  def compile
+    "#{@a}"
   end
 end
 
@@ -465,6 +501,10 @@ class BooleanNode
   def debug
     " -> Bool(#{@a.evaluate}#{@b}#{@c.evaluate})"
   end
+
+  def compile
+    "#{@a.compile}#{@b}#{@c.compile}"
+  end
 end
 
 class Dummy
@@ -472,6 +512,9 @@ class Dummy
     nil
   end
   def evaluate
+    ""
+  end
+  def compile
     ""
   end
 end
@@ -488,6 +531,10 @@ class StmtNode
   def debug
     " -> StmtNode(#{@a.debug})"
   end
+
+  def compile
+    "#{@a.compile}\n"
+  end
 end
 
 class StmtListNode < Array
@@ -500,6 +547,13 @@ class StmtListNode < Array
 
   def debug
     self.each {|a| puts "StmtListNode #{a.debug} \n"}
+  end
+
+  def compile
+    derp = ""
+    self.each {|a| derp += a.compile}
+
+    derp
   end
 end
 
@@ -637,6 +691,19 @@ class Skywalker
     puts "=> #{@@res.evaluate}"
   end
 
+  def compile(filename)
+    code = File.read(filename)
+    @@res = (@skywalker.parse code)
+    external = File.read("external.skywalker")
+    File.open("out.rb", 'w') {|f| f.write(external +
+                                          "\n" +
+                                          "def main\n" +
+                                          @@res.compile +
+                                          "\nskywalker_update" +
+                                          "\nskywalker_end" +
+                                          "\nend\nmain") }
+  end
+    
   def log(state = false)
     if state
       @skywalker.logger.level = Logger::DEBUG

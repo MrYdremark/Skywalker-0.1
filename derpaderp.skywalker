@@ -1,0 +1,3 @@
+routine Main
+	wait(2)
+end
