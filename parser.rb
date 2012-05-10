@@ -3,9 +3,12 @@
 
 
 @@vars = {}
+@@control = {}
 @@res = ""
-@@tmp = ""
-@@i = 0
+@@external = ""
+
+@@interface = ""
+@@code = ""
 
 # 2010-02-11 New version of this file for the 2010 instance of TDP007
 #   which handles false return values during parsing, and has an easy way
@@ -398,9 +401,50 @@ class AssignNode
   end
 
   def compile
-    "#{@a} = #{@b.compile}\n@@vars[\"#{@a}\"] = #{@b.compile}"
+    "#{@a} = #{@b.compile}"
   end
 end
+
+class ControlsAssignNode
+  def initialize(a, b)
+    @a = a
+    @b = b
+  end
+
+  def compile
+    "@@control[\"#{@a}\"] = #{@b.compile}"
+  end
+end
+
+class IncludeNode
+  def initialize(a)
+    @@external = a
+  end
+
+  def compile
+    ""
+  end
+end
+
+class InterfaceVarNode
+  def initialize(a)
+    @a = a
+  end
+
+  def compile
+    "#{@a}"
+  end
+end
+
+class InterfaceVarListNode < Array
+  def initialize
+  end
+
+  def compile
+    self.each {|a| @@control[a] = 0 }
+  end
+end
+              
 
 class IfElseNode
   def initialize(a, b)
@@ -567,11 +611,15 @@ class Skywalker
       token(/./) {|m| m }
       
       start :start do
-        match("routine", "Main", :derp, "end") {|_, _, a, _| a }
+        match(:interface, :routine) {|a, b| @@interface = a, @@code = b }
       end
       
-      rule :derp do
-        match(:stmt_list) {|a| a }
+      rule :interface do
+        match("interface", :interface_stmt_list, :terminator) {|a| a }
+      end
+      
+      rule :routine do
+        match("routine", "Main", :stmt_list, :terminator) {|_, _, a, _| a }
       end
 
       rule :stmt_list do
@@ -579,11 +627,45 @@ class Skywalker
         match(:stmt_list, ";", :stmt) {|a, _, b| a << StmtNode.new(b)}
       end
 
+      rule :interface_stmt_list do
+        match(:interface_stmt) {|a| StmtListNode.new << StmtNode.new(a)}
+        match(:interface_stmt_list, ";", :interface_stmt) {|a, _, b| a << StmtNode.new(b)}
+      end
+
+      rule :interface_stmt do
+        match(:include_stmt) {|a| a }
+        match(:interface_assign_stmt) {|a| a }
+      end
+
+      rule :include_stmt do
+        match("external", "(", /.+/, ".", /.+/, ")") {|_, _, a, b, c, _| IncludeNode.new("#{a}#{b}#{c}") }
+      end
+
+      rule :interface_assign_stmt do
+        match("Controls", "=", "{", :interface_var_list, "}") {|_, _, _, a, _| ControlsAssignNode.new(a, 0) } 
+      end
+
+      rule :interface_var_list do
+        match(:interface_var) {|a| InterfaceVarListNode.new << InterfaceVarNode.new(a) }
+        match(:interface_var_list, ",", :interface_var) {|a, _, b|
+          a << InterfaceVarNode.new(b) }
+      end
+
+      rule :interface_var do
+        match(/[a-zA-Z]/) {|a| a }
+      end
+
+      rule :control_assign_stmt do
+        match("Controls", "[", /[a-zA-Z]/, "]", "=", :addition) {|_, _, a, _, _, b|
+          ControlsAssignNode.new(a, b) } 
+      end
+      
       rule :stmt do
         match(:if_else_stmt) {|a| a}
         match(:while_stmt) {|a| a}
-        match(:assign_stmt)
-        match(:wait_stmt)
+        match(:control_assign_stmt) {|a| a}
+        match(:assign_stmt) {|a| a}
+        match(:wait_stmt) {|a| a}
         match(:addition) {|a| a}
       end
 
@@ -658,11 +740,11 @@ class Skywalker
       end
       
       rule :identifier do
-        match(/\w/) {|a| IdentifierNode.new(a) }
+        match(/^[a-z]+/) {|a| IdentifierNode.new(a) }
       end
 
       rule :assign_stmt do
-        match(/\w/, "=", :addition) {|a, _, b| AssignNode.new(a,b) }
+        match(/^[a-z]+/, "=", :addition) {|a, _, b| AssignNode.new(a,b) }
       end
       
     end
@@ -694,11 +776,11 @@ class Skywalker
   def compile(filename)
     code = File.read(filename)
     @@res = (@skywalker.parse code)
-    external = File.read("external.skywalker")
+    external = File.read(@@external)
     File.open("out.rb", 'w') {|f| f.write(external +
                                           "\n" +
                                           "def main\n" +
-                                          @@res.compile +
+                                          @@code.compile +
                                           "\nskywalker_update" +
                                           "\nskywalker_end" +
                                           "\nend\nmain") }
