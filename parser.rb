@@ -446,7 +446,7 @@ class InterfaceVarListNode < Array
 end
               
 
-class IfElseNode
+class IfNode
   def initialize(a, b)
     @bool = a
     @stmt = b
@@ -466,7 +466,28 @@ class IfElseNode
   end
 
   def compile
-    "if (#{@bool})\n#{@stmt}\nend"
+    "if (#{@bool})\n#{@stmt}"
+  end
+end
+
+class ElseNode
+  def initialize(a)
+    @stmt = a
+  end
+
+  def compile
+    "else\n #{@stmt}"
+  end
+end
+
+class IfElseNode
+  def initialize(a,b)
+    @if = a
+    @else = b
+  end
+
+  def compile
+    "#{@if}\n#{@else}\nend"
   end
 end
 
@@ -725,9 +746,18 @@ class Skywalker
       end
       
       
-      rule :if_else_stmt do
+      rule :if_stmt do
         match("if", "(", :bool_expr, ")", :stmt_list, :terminator) {|_, _, a, _, b, _|
-          IfElseNode.new(a,b) }
+          IfNode.new(a,b) }
+      end
+
+      rule :else_stmt do
+        match("else", :stmt_list, :terminator) {|_, a, _| ElseNode.new(a) }
+      end
+
+      rule :if_else_stmt do
+        match(:if_stmt) {|a| IfElseNode.new(a,"") }
+        match(:if_stmt, :else_stmt) {|a, b| IfElseNode.new(a,b) }
       end
 
       rule :while_stmt do
