@@ -466,7 +466,7 @@ class IfNode
   end
 
   def compile
-    "if (#{@bool})\n#{@stmt}"
+    "if (#{@bool.compile})\n#{@stmt.compile}"
   end
 end
 
@@ -476,7 +476,7 @@ class ElseNode
   end
 
   def compile
-    "else\n #{@stmt}"
+    "else\n#{@stmt.compile}"
   end
 end
 
@@ -487,7 +487,7 @@ class IfElseNode
   end
 
   def compile
-    "#{@if}\n#{@else}\nend"
+    "#{@if.compile}\n#{@else.compile}\nend"
   end
 end
 
@@ -747,17 +747,17 @@ class Skywalker
       
       
       rule :if_stmt do
-        match("if", "(", :bool_expr, ")", :stmt_list, :terminator) {|_, _, a, _, b, _|
+        match("if", "(", :bool_expr, ")", :stmt_list) {|_, _, a, _, b|
           IfNode.new(a,b) }
       end
 
       rule :else_stmt do
-        match("else", :stmt_list, :terminator) {|_, a, _| ElseNode.new(a) }
+        match("else", :stmt_list) {|_, a| ElseNode.new(a) }
       end
 
       rule :if_else_stmt do
-        match(:if_stmt) {|a| IfElseNode.new(a,"") }
-        match(:if_stmt, :else_stmt) {|a, b| IfElseNode.new(a,b) }
+        match(:if_stmt, :terminator) {|a, _| IfElseNode.new(a,"") }
+        match(:if_stmt, :else_stmt, :terminator) {|a, b, _| IfElseNode.new(a,b) }
       end
 
       rule :while_stmt do
