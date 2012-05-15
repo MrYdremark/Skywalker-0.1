@@ -23,16 +23,17 @@ def skywalker_end
 end
 
 def main
-Main = Fiber.new do @@control["one"] = 0
+Main = Fiber.new do
+@@control["one"] = 0
 @@control["two"] = 0
 @@control["three"] = 0
 skywalker_update
-sleep(2)
+Fiber.yield wait 2
 a = 42
 b = 37
 c = 59
 skywalker_update
-sleep(2)
+Fiber.yield wait 2
 if (a>41)
 @@control["one"] = 53
 
@@ -44,15 +45,16 @@ a = 10
 b = 15
 c = 20
 skywalker_update
-sleep(2)
+Fiber.yield wait 2
 a = 30
 b = 40
 c = 50
 skywalker_update
-sleep(3)
+Fiber.yield wait 3
 a = 0
 b = 0
 c = 0
+Fiber.yield :end
 end
 skywalker_update
 skywalker_end
