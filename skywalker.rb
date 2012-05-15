@@ -1,5 +1,6 @@
-require 'parser.rb'
-require 'nodes.rb'
+require './parser.rb'
+require './nodes.rb'
+require 'fiber'
 
 class Skywalker
   def initialize
@@ -19,7 +20,8 @@ class Skywalker
       end
       
       rule :routine do
-        match("routine", "Main", :stmt_list, :terminator) {|_, _, a, _| a }
+        match("routine", /^[a-zA-Z]/, :stmt_list, :terminator){|_, name, stmt_list, _|
+          RoutineNode.new(name, stmt_list) }
       end
 
       rule :stmt_list do

@@ -134,7 +134,18 @@ class InterfaceVarListNode < Array
     self.each {|a| @@control[a] = 0 }
   end
 end
-              
+
+class RoutineNode
+  def initialize(name, stmt)
+    @name = name
+    @stmt = stmt
+  end
+
+  def compile
+    "#{@name} = Fiber.new do\n#{@stmt.compile}Fiber.yield :end\nend"
+  end
+end
+    
 
 class IfNode
   def initialize(a, b)

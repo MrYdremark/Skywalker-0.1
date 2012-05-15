@@ -16,6 +16,12 @@ routine Main
 
   wait(2);
 
+  if(a > 41)
+	Controls[one] = 53
+  else
+	Controls[one] = 34
+  end;
+
   a = 10;
   b = 15;
   c = 20;

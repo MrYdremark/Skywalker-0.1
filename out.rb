@@ -23,7 +23,7 @@ def skywalker_end
 end
 
 def main
-@@control["one"] = 0
+Main = Fiber.new do @@control["one"] = 0
 @@control["two"] = 0
 @@control["three"] = 0
 skywalker_update
@@ -33,6 +33,13 @@ b = 37
 c = 59
 skywalker_update
 sleep(2)
+if (a>41)
+@@control["one"] = 53
+
+else
+@@control["one"] = 34
+
+end
 a = 10
 b = 15
 c = 20
@@ -46,7 +53,7 @@ sleep(3)
 a = 0
 b = 0
 c = 0
-
+end
 skywalker_update
 skywalker_end
 end
