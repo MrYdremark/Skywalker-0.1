@@ -12,11 +12,16 @@ class Skywalker
       token(/./) {|m| m }
       
       start :start do
-        match(:interface, :routine) {|a, b| @@interface = a, @@code = b }
+        match(:interface, :routine_list) {|a, b| @@interface = a, @@code = b }
+      end
+
+      rule :routine_list do
+        match(:routine_list, :routine) {|a, b| a << b }
+        match(:routine) {|a| RoutineListNode.new << a }
       end
       
       rule :interface do
-        match("interface", :interface_stmt_list, :terminator) {|a| a }
+        match("interface", :interface_stmt_list, :terminator) {|_, a, _| a}
       end
       
       rule :routine do

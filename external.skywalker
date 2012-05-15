@@ -43,11 +43,11 @@ def scheduler
       temp = eval($2)
       lista.insert(temp)
       scope << temp
-      puts "Adding #{temp} to the scope"
+      puts " --Adding #{temp} to the scope"
       skywalker_update
     elsif (con == :end)
       scope.pop
-      puts "Deleting #{scope.last} from the scope"
+      puts " --Deleting #{scope.last} from the scope"
     else
       puts "FEL!"
     end

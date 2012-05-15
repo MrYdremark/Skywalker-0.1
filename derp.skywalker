@@ -1,7 +1,11 @@
+interface
+	Controls = {dinmamma}
+end
+
 routine Main
-a = 0;
-while(a < 5)
-a = a + 1
-end;
-a
+a = 0
+end
+
+routine Derp
+a = 1
 end

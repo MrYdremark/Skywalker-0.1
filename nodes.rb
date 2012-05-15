@@ -155,6 +155,18 @@ class RoutineNode
     "#{@name} = Fiber.new do\nloop do\n#{@stmt.compile}Fiber.yield :end\nend\nend"
   end
 end
+
+class RoutineListNode < Array
+  def initialize
+  end
+
+  def compile
+    temp = ""
+    self.each {|a| temp += a.compile + "\n" }
+    temp
+  end
+end
+    
     
 
 class IfNode
