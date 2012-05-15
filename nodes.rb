@@ -231,7 +231,7 @@ class WaitNode
   end
 
   def compile
-    "skywalker_update\nsleep(#{@a.compile})"
+    "Fiber.yield \"wait #{@a.compile}\""
   end
 end
 
