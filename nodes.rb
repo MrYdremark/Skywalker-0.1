@@ -22,7 +22,7 @@ class CallNode
   end
 
   def compile
-    "Fiber.yield \"call #{name}\""
+    "Fiber.yield \"call #{@name}\""
   end
 end
 
@@ -152,7 +152,7 @@ class RoutineNode
   end
 
   def compile
-    "#{@name} = Fiber.new do\n#{@stmt.compile}Fiber.yield :end\nend"
+    "#{@name} = Fiber.new do\nloop do\n#{@stmt.compile}Fiber.yield :end\nend\nend"
   end
 end
     

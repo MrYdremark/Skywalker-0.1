@@ -201,11 +201,8 @@ class Skywalker
     external = File.read(@@external)
     File.open("out.rb", 'w') {|f| f.write(external +
                                           "\n" +
-                                          "def main\n" +
                                           @@code.compile +
-                                          "\nskywalker_update" +
-                                          "\nskywalker_end" +
-                                          "\nend\nmain") }
+                                          "\nscheduler") }
   end
   
   def log(state = false)
