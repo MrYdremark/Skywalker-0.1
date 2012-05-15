@@ -16,6 +16,16 @@ class AdditionNode
   end
 end
 
+class CallNode
+  def initialize(name)
+    @name = name
+  end
+
+  def compile
+    "Fiber.yield \"call #{name}\""
+  end
+end
+
 class MultiNode
   def initialize(op, a, b)
     @op, @a, @b = op, a, b
