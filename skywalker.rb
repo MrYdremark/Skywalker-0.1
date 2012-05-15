@@ -153,6 +153,10 @@ class Skywalker
           WhileNode.new(a,b) }
       end
 
+      rule :call do
+        match("call", "(", /[a-zA-Z]+/, ")") {|_, _, routine, _| CallNode.new(routine) }
+      end
+
       rule :wait_stmt do
         match("wait", "(", :addition, ")") {|_, _, a, _| WaitNode.new(a)}
       end
