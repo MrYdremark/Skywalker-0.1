@@ -9,10 +9,10 @@ class Skywalker
       token(/\d+\.\d+/) {|float| float.to_f }
       token(/\d+/) {|int| int.to_i }
       token(/\w+/) {|str| str }
-      token(/!=|<=|>=|==|\+=|-=|\*=|\/=/) {|op| op }
+      token(/(!=|<=|>=|==|\+=|-=|\*=|\/=)/) {|op| op }
       token(/./) {|wldcrd| wldcrd }
       
-      start :start do
+      start :program do
         match(:interface, :routine_list) {
           |int, rout| @@interface = int, @@code = rout }
       end
@@ -30,7 +30,7 @@ class Skywalker
       end
       
       rule :routine do
-        match("routine", /^[a-zA-Z]/, :stmt_list, :terminator) {
+        match("routine", /^[A-Z][a-zA-Z]+/, :stmt_list, :terminator) {
           |_, name, stmt_list, _| RoutineNode.new(name, stmt_list) }
       end
 
@@ -84,6 +84,7 @@ class Skywalker
         match(:while_stmt) {|stmt| stmt }
         match(:control_assign_stmt, ";") {|stmt, _| stmt }
         match(:assign_stmt, ";") {|stmt, _| stmt }
+        match(:call_stmt, ";") {|stmt, _| stmt }
         match(:wait_stmt, ";") {|stmt, _| stmt }
         match(:addition, ";") {|expr, _| expr } 
       end
@@ -111,7 +112,9 @@ class Skywalker
           |float| FloatNode.new(float) }
         match(Integer) {
           |int| IntegerNode.new(int) }
-        match(:identifier)        
+        match(:identifier)
+        match("Controls" , "[", /[a-zA-Z]+/, "]") {
+          |_, _, name, _| IdentifierNode.new("@@control[\"#{name}\"]") }
       end
 
       rule :boolean do
@@ -167,7 +170,7 @@ class Skywalker
         match(:if_stmt, :terminator) {
           |stmt, _| IfElseNode.new(stmt, "") }
         match(:if_stmt, :else_stmt, :terminator) {
-          |if_stmt, else_etmt, _| IfElseNode.new(if_stmt, else_stmt) }
+          |if_stmt, else_stmt, _| IfElseNode.new(if_stmt, else_stmt) }
       end
 
       rule :while_stmt do
@@ -175,8 +178,8 @@ class Skywalker
           |_, _, bool, _, stmt, _| WhileNode.new(bool, stmt) }
       end
 
-      rule :call do
-        match("call", "(", /[a-zA-Z]+/, ")") {
+      rule :call_stmt do
+        match("call", "(", /^[A-Z][a-zA-Z]+/, ")") {
           |_, _, routine, _| CallNode.new(routine) }
       end
 

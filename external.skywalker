@@ -3,11 +3,11 @@
 require 'curses'
 
 @@control = {}
-
+@@dbglst = []
 Curses.init_screen()
 
 @@win = Curses::Window.new(0, 0, 0, 0)
-
+@@debug = Curses::Window.new(0, 0, 0, 0)
 def skywalker_update
   @@i = 0
   @@win.setpos(0,0)
@@ -27,14 +27,20 @@ Y88b  d88P 888 \"88b Y88b 888 Y88b 888 d88P 888  888 888 888 \"88b Y8b.     888
   @@control.each {|a, b|
     @@win << "Variable #{a}: #{b} \n"}
   @@win.refresh
+  @@dbgi = 0
+  @@dbglst.each {|a|
+    @@debug.setpos(@@dbgi,100)
+    @@debug << "#{a}\n"
+    @@dbgi += 1 }
+  @@debug.refresh
 end
 
 def skywalker_end
-  @@win.setpos(12, 0)
-  @@win << "\nDone!"
-  @@win.refresh
+  @@debug << "Done!"
+  skywalker_update
   @@win.getch
   @@win.close
+  @@debug.close
 end
 
 def scheduler
@@ -52,17 +58,20 @@ def scheduler
     con = lista[i].resume
     
     if (con =~ /(wait) (.*)/)
+      temp = $2
+      @@dbglst << " -- Waiting #{temp} sec"
       skywalker_update
-      sleep eval($2)
+      sleep eval(temp)
     elsif (con =~ /(call) (.*)/)
-      temp = eval($2)
+      name = $2
+      temp = eval(name)
       lista.insert(temp)
       scope << temp
-      puts " --Adding #{temp} to the scope"
+      @@dbglst << " -- Calling #{name}"
       skywalker_update
     elsif (con == :end)
       scope.pop
-      puts " --Deleting #{scope.last} from the scope"
+      # @@dbglst << " --Deleting #{scope.last} from the scope"
     else
       puts "FEL!"
     end

@@ -3,23 +3,44 @@
 require 'curses'
 
 @@control = {}
-
+@@dbglst = []
 Curses.init_screen()
 
 @@win = Curses::Window.new(0, 0, 0, 0)
-
+@@debug = Curses::Window.new(0, 0, 0, 0)
 def skywalker_update
+  @@i = 0
   @@win.setpos(0,0)
-  @@win << "Skywalker demo uber alles!! :D \n\n"
-  @@control.each {|a, b| @@win << "Variable #{a}: #{b} \n" }
+  @@win << " .d8888b.  888                                      888 888                       
+d88P  Y88b 888                                      888 888                       
+Y88b.      888                                      888 888                       
+ \"Y888b.   888  888 888  888 888  888  888  8888b.  888 888  888  .d88b.  888d888 
+    \"Y88b. 888 .88P 888  888 888  888  888     \"88b 888 888 .88P d8P  Y8b 888P\"   
+      \"888 888888K  888  888 888  888  888 .d888888 888 888888K  88888888 888     
+Y88b  d88P 888 \"88b Y88b 888 Y88b 888 d88P 888  888 888 888 \"88b Y8b.     888     
+ \"Y8888P\"  888  888  \"Y88888  \"Y8888888P\"  \"Y888888 888 888  888  \"Y8888  888     
+                         888                                                      
+                    Y8b d88P                                                      
+                     \"Y88P\"                                                       
+-------------------------------------------------------------------------------------"
+  @@win.setpos(12, 0)
+  @@control.each {|a, b|
+    @@win << "Variable #{a}: #{b} \n"}
   @@win.refresh
+  @@dbgi = 0
+  @@dbglst.each {|a|
+    @@debug.setpos(@@dbgi,100)
+    @@debug << "#{a}\n"
+    @@dbgi += 1 }
+  @@debug.refresh
 end
 
 def skywalker_end
-  @@win << "\nDone!"
-  @@win.refresh
+  @@debug << "Done!"
+  skywalker_update
   @@win.getch
   @@win.close
+  @@debug.close
 end
 
 def scheduler
@@ -37,17 +58,20 @@ def scheduler
     con = lista[i].resume
     
     if (con =~ /(wait) (.*)/)
+      temp = $2
+      @@dbglst << " -- Waiting #{temp} sec"
       skywalker_update
-      sleep eval($2)
+      sleep eval(temp)
     elsif (con =~ /(call) (.*)/)
-      temp = eval($2)
+      name = $2
+      temp = eval(name)
       lista.insert(temp)
       scope << temp
-      puts " --Adding #{temp} to the scope"
+      @@dbglst << " -- Calling #{name}"
       skywalker_update
     elsif (con == :end)
       scope.pop
-      puts " --Deleting #{scope.last} from the scope"
+      # @@dbglst << " --Deleting #{scope.last} from the scope"
     else
       puts "FEL!"
     end
@@ -61,9 +85,36 @@ end
 
 Main = Fiber.new do
 loop do
-a = 6 / 2 * (1 + 2)
-@@control["derp"] = a
+@@control["servo2"] = 0
+@@control["motor"] = 100
+a = 0
+while(a<=10)
+@@control["servo"] = a
+Fiber.yield "call Derp"
+a += 1
+
+end
 Fiber.yield "wait 5"
+Fiber.yield :end
+end
+end
+Derp = Fiber.new do
+loop do
+if (@@control["motor"]==100)
+@@control["motor"] = 50
+
+else
+Fiber.yield "call Derpaderp"
+
+end
+Fiber.yield "wait 1"
+Fiber.yield :end
+end
+end
+Derpaderp = Fiber.new do
+loop do
+@@control["servo2"] += 10
+@@control["motor"] = 100
 Fiber.yield :end
 end
 end
