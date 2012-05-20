@@ -1,10 +1,15 @@
 interface
 	external(external.skywalker);
-	Controls = {derp};
+	Controls = {motor, servo};
 end	
 
 routine Main
-	a = 6/2*(1+2);
-	Controls[derp] = a;
+	Controls[motor] = 100;
+	a = 0;	
+	while(a <= 10)
+		Controls[servo] = a;
+		wait(1);
+	 	a = a + 1;
+	end
 	wait(5);
 end

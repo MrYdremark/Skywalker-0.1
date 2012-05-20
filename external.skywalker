@@ -9,13 +9,28 @@ Curses.init_screen()
 @@win = Curses::Window.new(0, 0, 0, 0)
 
 def skywalker_update
+  @@i = 0
   @@win.setpos(0,0)
-  @@win << "Skywalker demo uber alles!! :D \n\n"
-  @@control.each {|a, b| @@win << "Variable #{a}: #{b} \n" }
+  @@win << " .d8888b.  888                                      888 888                       
+d88P  Y88b 888                                      888 888                       
+Y88b.      888                                      888 888                       
+ \"Y888b.   888  888 888  888 888  888  888  8888b.  888 888  888  .d88b.  888d888 
+    \"Y88b. 888 .88P 888  888 888  888  888     \"88b 888 888 .88P d8P  Y8b 888P\"   
+      \"888 888888K  888  888 888  888  888 .d888888 888 888888K  88888888 888     
+Y88b  d88P 888 \"88b Y88b 888 Y88b 888 d88P 888  888 888 888 \"88b Y8b.     888     
+ \"Y8888P\"  888  888  \"Y88888  \"Y8888888P\"  \"Y888888 888 888  888  \"Y8888  888     
+                         888                                                      
+                    Y8b d88P                                                      
+                     \"Y88P\"                                                       
+-------------------------------------------------------------------------------------"
+  @@win.setpos(12, 0)
+  @@control.each {|a, b|
+    @@win << "Variable #{a}: #{b} \n"}
   @@win.refresh
 end
 
 def skywalker_end
+  @@win.setpos(12, 0)
   @@win << "\nDone!"
   @@win.refresh
   @@win.getch
