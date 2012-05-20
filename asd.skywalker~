@@ -1,0 +1,8 @@
+interface
+	Control = {derp}
+end	
+
+routine Main
+Control[derp] = 6/2(1+2);
+wait(5)
+end

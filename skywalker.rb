@@ -6,120 +6,134 @@ class Skywalker
   def initialize
     @skywalker = Parser.new("skywalker") do
       token(/\s+/)
-      token(/\d+\.\d+/) {|m| m.to_f }
-      token(/\d+/) {|m| m.to_i }
-      token(/\w+/) {|m| m }
-      token(/./) {|m| m }
+      token(/\d+\.\d+/) {|float| float.to_f }
+      token(/\d+/) {|int| int.to_i }
+      token(/\w+/) {|str| str }
+      token(/!=|<=|>=|==|\+=|-=|\*=|\/=/) {|op| op }
+      token(/./) {|wldcrd| wldcrd }
       
       start :start do
-        match(:interface, :routine_list) {|a, b| @@interface = a, @@code = b }
+        match(:interface, :routine_list) {
+          |int, rout| @@interface = int, @@code = rout }
       end
 
       rule :routine_list do
-        match(:routine_list, :routine) {|a, b| a << b }
-        match(:routine) {|a| RoutineListNode.new << a }
+        match(:routine_list, :routine) {
+          |lst, rout| lst << rout }
+        match(:routine) {
+          |rout| RoutineListNode.new << rout }
       end
       
       rule :interface do
-        match("interface", :interface_stmt_list, :terminator) {|_, a, _| a}
+        match("interface", :interface_stmt_list, :terminator) {
+          |_, stmt_lst, _, _| stmt_lst }
       end
       
       rule :routine do
-        match("routine", /^[a-zA-Z]/, :stmt_list, :terminator){|_, name, stmt_list, _|
-          RoutineNode.new(name, stmt_list) }
+        match("routine", /^[a-zA-Z]/, :stmt_list, :terminator) {
+          |_, name, stmt_list, _| RoutineNode.new(name, stmt_list) }
       end
 
       rule :stmt_list do
-        match(:stmt) {|a| StmtListNode.new << StmtNode.new(a)}
-        match(:stmt_list, ";", :stmt) {|a, _, b| a << StmtNode.new(b)}
+        match(:stmt) {
+          |stmt| StmtListNode.new << StmtNode.new(stmt) }
+        match(:stmt_list, :stmt) {
+          |lst, stmt| lst << StmtNode.new(stmt) }
       end
 
       rule :interface_stmt_list do
-        match(:interface_stmt) {|a| StmtListNode.new << StmtNode.new(a)}
-        match(:interface_stmt_list, ";", :interface_stmt) {|a, _, b|
-          a << StmtNode.new(b)}
+        match(:interface_stmt) {
+          |stmt| StmtListNode.new << StmtNode.new(stmt) }
+        match(:interface_stmt_list, :interface_stmt) {
+          |lst, _, stmt| lst << StmtNode.new(stmt) }
       end
 
       rule :interface_stmt do
-        match(:include_stmt) {|a| a }
-        match(:interface_assign_stmt) {|a| a }
+        match(:include_stmt, ";") {|stmt, _| stmt }
+        match(:interface_assign_stmt, ";") {|stmt, _| stmt }
       end
 
       rule :include_stmt do
-        match("external", "(", /.+/, ".", /.+/, ")") {|_, _, a, b, c, _|
-          IncludeNode.new("#{a}#{b}#{c}") }
+        match("external", "(", /.+/, ".", /.+/, ")") {
+          |_, _, name, dot, ext, _| IncludeNode.new("#{name}#{dot}#{ext}") }
       end
 
       rule :interface_assign_stmt do
-        match("Controls", "=", "{", :interface_var_list, "}") {|_, _, _, a, _|
-          ControlsAssignNode.new(a, 0) } 
+        match("Controls", "=", "{", :interface_var_list, "}") {
+          |_, _, _, var_lst, _| ControlsAssignNode.new(var_lst, 0) } 
       end
 
       rule :interface_var_list do
-        match(:interface_var) {|a|
-          InterfaceVarListNode.new << InterfaceVarNode.new(a) }
-        match(:interface_var_list, ",", :interface_var) {|a, _, b|
-          a << InterfaceVarNode.new(b) }
+        match(:interface_var) {
+          |var| InterfaceVarListNode.new << InterfaceVarNode.new(var) }
+        match(:interface_var_list, ",", :interface_var) {
+          |lst, _, var| lst << InterfaceVarNode.new(var) }
       end
 
       rule :interface_var do
-        match(/[a-zA-Z]/) {|a| a }
+        match(/[a-zA-Z]/) {|var| var }
       end
 
       rule :control_assign_stmt do
-        match("Controls", "[", /[a-zA-Z]/, "]", "=", :addition) {|_, _, a, _, _, b|
-          ControlsAssignNode.new(a, b) } 
+        match("Controls", "[", /[a-zA-Z]/, "]", "=", :addition) {
+          |_, _, name, _, _, expr| ControlsAssignNode.new(name, expr) } 
       end
       
       rule :stmt do
-        match(:if_else_stmt) {|a| a}
-        match(:while_stmt) {|a| a}
-        match(:control_assign_stmt) {|a| a}
-        match(:assign_stmt) {|a| a}
-        match(:wait_stmt) {|a| a}
-        match(:addition) {|a| a}
+        match(:if_else_stmt) {|stmt| stmt }
+        match(:while_stmt) {|stmt| stmt }
+        match(:control_assign_stmt, ";") {|stmt, _| stmt }
+        match(:assign_stmt, ";") {|stmt, _| stmt }
+        match(:wait_stmt, ";") {|stmt, _| stmt }
+        match(:addition, ";") {|expr, _| expr } 
       end
 
       rule :addition do
         match(:multi)
-        match(:addition, :addition_oper, :multi) {|a, c, b|
-          AdditionNode.new(c, a, b) }
+        match(:addition, :addition_oper, :multi) {
+          |left, op, right| AdditionNode.new(op, left, right) }
       end
       
       rule :multi do
         match(:primary)
-        match(:multi, :multi_oper, :multi) {|a, c, b| MultiNode.new(c, a, b) }
+        match(:multi, :multi_oper, :multi) {
+          |left, op, right| MultiNode.new(op, left, right) }
       end
       
       rule :primary do
-        match("(", :addition, ")") {|_, a, _| a }
+        match("(", :addition, ")") {
+          |_, expr, _| ParenthesesNode.new(expr) }
         match(:atom)
       end
       
       rule :atom do
-        match(Float) {|a| FloatNode.new(a) }
-        match(Integer) {|a| IntegerNode.new(a) }
+        match(Float) {
+          |float| FloatNode.new(float) }
+        match(Integer) {
+          |int| IntegerNode.new(int) }
         match(:identifier)        
-        match(";")
       end
 
       rule :boolean do
-        match("true") {|a| a}
-        match("false") {|a| a}
+        match("true") {
+          |bool| bool }
+        match("false") {
+          |bool| bool }
       end
       
       rule :terminator do
-        match("end") {|a| a}
+        match("end") {
+          |a| a }
       end
       
       rule :addition_oper do
-        match("+") {|a| a}
-        match("-") {|a| a}
+        match(/\+|-|\+=|-=/) {
+          |op| op }
       end
 
       rule :multi_oper do
-        match("*") {|a| a}
-        match("/") {|a| a}
+        match(/\*|\/|\*=|\/=/) {
+          |op| op }
       end
 
       rule :rel_oper do
@@ -132,46 +146,53 @@ class Skywalker
       end
 
       rule :bool_expr do
-        match(:boolean) {|a| BooleanNode.new(Dummy.new, a, Dummy.new)}
-        match(:addition, :rel_oper, :multi) {|a, b, c| BooleanNode.new(a, b, c) }
+        match(:boolean) {
+          |bool| BooleanNode.new(Dummy.new, bool, Dummy.new) }
+        match(:addition, :rel_oper, :multi) {
+          |left, op, right| BooleanNode.new(left, op, right) }
       end
       
       
       rule :if_stmt do
-        match("if", "(", :bool_expr, ")", :stmt_list) {|_, _, a, _, b|
-          IfNode.new(a,b) }
+        match("if", "(", :bool_expr, ")", :stmt_list) {
+          |_, _, bool, _, stmt| IfNode.new(bool, stmt) }
       end
 
       rule :else_stmt do
-        match("else", :stmt_list) {|_, a| ElseNode.new(a) }
+        match("else", :stmt_list) {
+          |_, stmt| ElseNode.new(stmt) }
       end
 
       rule :if_else_stmt do
-        match(:if_stmt, :terminator) {|a, _| IfElseNode.new(a,"") }
-        match(:if_stmt, :else_stmt, :terminator) {|a, b, _|
-          IfElseNode.new(a,b) }
+        match(:if_stmt, :terminator) {
+          |stmt, _| IfElseNode.new(stmt, "") }
+        match(:if_stmt, :else_stmt, :terminator) {
+          |if_stmt, else_etmt, _| IfElseNode.new(if_stmt, else_stmt) }
       end
 
       rule :while_stmt do
         match("while", "(", :bool_expr, ")", :stmt_list, :terminator) {
-          |_, _, a, _, b, _|
-          WhileNode.new(a,b) }
+          |_, _, bool, _, stmt, _| WhileNode.new(bool, stmt) }
       end
 
       rule :call do
-        match("call", "(", /[a-zA-Z]+/, ")") {|_, _, routine, _| CallNode.new(routine) }
+        match("call", "(", /[a-zA-Z]+/, ")") {
+          |_, _, routine, _| CallNode.new(routine) }
       end
 
       rule :wait_stmt do
-        match("wait", "(", :addition, ")") {|_, _, a, _| WaitNode.new(a)}
+        match("wait", "(", :addition, ")") {
+          |_, _, time, _| WaitNode.new(time)}
       end
       
       rule :identifier do
-        match(/^[a-z]+/) {|a| IdentifierNode.new(a) }
+        match(/^[a-z]+/) {
+          |id| IdentifierNode.new(id) }
       end
 
       rule :assign_stmt do
-        match(/^[a-z]+/, "=", :addition) {|a, _, b| AssignNode.new(a,b) }
+        match(/^[a-z]+/, "=", :addition) {
+          |var, _, expr| AssignNode.new(var, expr) }
       end
       
     end

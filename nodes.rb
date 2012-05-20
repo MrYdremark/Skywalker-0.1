@@ -1,18 +1,10 @@
 class AdditionNode
-  def initialize(op, a, b)
-    @op, @a, @b = op, a, b
-  end
-
-  def evaluate
-    eval("#{@a.evaluate}#{@op}#{@b.evaluate}")
-  end
-
-  def debug
-    " -> AdditionNode(#{@a.debug} #{@op} #{@b.debug})"
+  def initialize(op, left, right)
+    @op, @left, @right = op, left, right
   end
 
   def compile
-    "#{@a.compile} #{@op} #{@b.compile}"
+    "#{@left.compile} #{@op} #{@right.compile}"
   end
 end
 
@@ -27,98 +19,70 @@ class CallNode
 end
 
 class MultiNode
-  def initialize(op, a, b)
-    @op, @a, @b = op, a, b
-  end
-
-  def evaluate
-    eval("#{@a.evaluate}#{@op}#{@b.evaluate}")
-  end
-
-  def debug
-    " -> MultiNode(#{@a.debug} #{@op} #{@b.debug})"
+  def initialize(op, left, right)
+    @op, @left, @right = op, left, right
   end
 
   def compile
-    "#{@a.compile} #{@op} #{@b.compile}"
+    "#{@left.compile} #{@op} #{@right.compile}"
   end
 end
 
 class IntegerNode
   def initialize(a)
-    @a = a
-  end
-
-  def evaluate
-    @a
-  end
-
-  def debug
-    " -> IntegerNode(#{@a})"
+    @value = a
   end
 
   def compile
-    "#{@a}"
+    "#{@value}"
+  end
+end
+
+class ParenthesesNode
+  def initialize(add)
+    @add = add
+  end
+
+  def compile
+    "(#{@add.compile})"
   end
 end
 
 class FloatNode
   def initialize(a)
-    @a = a
-  end
-
-  def evaluate
-    @a
-  end
-
-  def debug
-    " -> FloatNode(#{@a})"
+    @value = a
   end
 
   def compile
-    "#{@a}"
+    "#{@value}"
   end
 end
 
 class AssignNode
-  def initialize(a,b)
-    @a = a
-    @b = b
-  end
-
-  def evaluate
-    c = @b.evaluate
-    assignVariable(@a,c)
-  end
-
-  def debug
-    c = @b.evaluate
-    " -> AssignNode(#{assignVariable(@a,c)})"
-  end
-
-  def assignVariable(a,b)
-    @@vars[a] = b
+  def initialize(var, expr)
+    @var = var
+    @expr = expr
   end
 
   def compile
-    "#{@a} = #{@b.compile}"
+    "#{@var} = #{@expr.compile}"
   end
 end
 
 class ControlsAssignNode
-  def initialize(a, b)
-    @a = a
-    @b = b
+  def initialize(ctrl, expr)
+    @ctrl = ctrl
+    @expr = expr
   end
 
   def compile
-    "@@control[\"#{@a}\"] = #{@b.compile}"
+    "@@control[\"#{@ctrl}\"] = #{@expr.compile}"
   end
 end
 
 class IncludeNode
-  def initialize(a)
-    @@external = a
+  def initialize(ext)
+    @@external = ext
   end
 
   def compile
@@ -127,12 +91,12 @@ class IncludeNode
 end
 
 class InterfaceVarNode
-  def initialize(a)
-    @a = a
+  def initialize(var)
+    @var = var
   end
 
   def compile
-    "#{@a}"
+    "#{@var}"
   end
 end
 
@@ -170,22 +134,9 @@ end
     
 
 class IfNode
-  def initialize(a, b)
-    @bool = a
-    @stmt = b
-  end
-
-  def evaluate
-    if @bool.evaluate
-      @stmt.evaluate
-    else
-      nil
-    end
-  end
-
-  def debug
-    " -> If -> Bool(#{@bool.debug}) then -> #{@stmt.debug}"
-    nil
+  def initialize(bool, stmt)
+    @bool = bool
+    @stmt = stmt
   end
 
   def compile
@@ -194,8 +145,8 @@ class IfNode
 end
 
 class ElseNode
-  def initialize(a)
-    @stmt = a
+  def initialize(stmt)
+    @stmt = stmt
   end
 
   def compile
@@ -204,9 +155,9 @@ class ElseNode
 end
 
 class IfElseNode
-  def initialize(a,b)
-    @if = a
-    @else = b
+  def initialize(if_,else_)
+    @if = if_
+    @else = else_
   end
 
   def compile
@@ -215,23 +166,9 @@ class IfElseNode
 end
 
 class WhileNode
-  def initialize(a, b)
-    @bool = a
-    @stmt = b
-  end
-
-  def evaluate
-    while(true)
-      if @bool.evaluate
-        @stmt.evaluate
-      else
-        break
-      end
-    end
-  end
-
-  def debug
-    " -> While -> Bool(#{@bool.debug} do -> #{@stmt.debug})"
+  def initialize(bool, stmt)
+    @bool = bool
+    @stmt = stmt
   end
 
   def compile
@@ -240,58 +177,34 @@ class WhileNode
 end
 
 class WaitNode
-  def initialize(a)
-    @a = a
-  end
-
-  def evaluate
-    sleep @a.evaluate
-  end
-
-  def debug
-    " -> wait #{@a.debug} sek"
+  def initialize(time)
+    @time = time
   end
 
   def compile
-    "Fiber.yield \"wait #{@a.compile}\""
+    "Fiber.yield \"wait #{@time.compile}\""
   end
 end
 
 class IdentifierNode
-  def initialize(a)
-    @a = a
-  end
-
-  def evaluate
-    @@vars[@a]
-  end
-  
-  def debug
-    " -> IdentifierNode(#{@a}) = (#{@@vars[@a]})"
+  def initialize(id)
+    @id = id
   end
 
   def compile
-    "#{@a}"
+    "#{@id}"
   end
 end
 
 class BooleanNode
-  def initialize(a, b, c)
-    @a = a
-    @b = b
-    @c = c
-  end
-
-  def evaluate
-    eval("#{@a.evaluate}#{@b}#{@c.evaluate}")
-  end
-
-  def debug
-    " -> Bool(#{@a.evaluate}#{@b}#{@c.evaluate})"
+  def initialize(left, op, right)
+    @left = left
+    @op = op
+    @right = right
   end
 
   def compile
-    "#{@a.compile}#{@b}#{@c.compile}"
+    "#{@left.compile}#{@op}#{@right.compile}"
   end
 end
 
@@ -299,48 +212,29 @@ class Dummy
   def initialize
     nil
   end
-  def evaluate
-    ""
-  end
+
   def compile
     ""
   end
 end
 
 class StmtNode
-  def initialize(a)
-    @a = a
+  def initialize(stmt)
+    @stmt = stmt
   end
   
-  def evaluate
-    @a.evaluate
-  end
-  
-  def debug
-    " -> StmtNode(#{@a.debug})"
-  end
-
   def compile
-    "#{@a.compile}\n"
+    "#{@stmt.compile}\n"
   end
 end
 
 class StmtListNode < Array
   def initialize
   end
-  def evaluate
-    self.each {|a| a.evaluate }
-    self[-1].evaluate
-  end
-
-  def debug
-    self.each {|a| puts "StmtListNode #{a.debug} \n"}
-  end
 
   def compile
-    derp = ""
-    self.each {|a| derp += a.compile}
-
-    derp
+    str = ""
+    self.each {|a| str += a.compile}
+    str
   end
 end

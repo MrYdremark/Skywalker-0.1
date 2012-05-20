@@ -61,13 +61,9 @@ end
 
 Main = Fiber.new do
 loop do
-a = 0
-Fiber.yield :end
-end
-end
-Derp = Fiber.new do
-loop do
-a = 1
+a = 6 / 2 * (1 + 2)
+@@control["derp"] = a
+Fiber.yield "wait 5"
 Fiber.yield :end
 end
 end

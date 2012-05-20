@@ -1,0 +1,10 @@
+interface
+	external(external.skywalker);
+	Controls = {derp};
+end	
+
+routine Main
+	a = 6/2*(1+2);
+	Controls[derp] = a;
+	wait(5);
+end
