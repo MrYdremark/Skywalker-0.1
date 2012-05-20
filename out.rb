@@ -27,7 +27,9 @@ Y88b  d88P 888 \"88b Y88b 888 Y88b 888 d88P 888  888 888 888 \"88b Y8b.     888
   @@control.each {|a, b|
     @@win << "Variable #{a}: #{b} \n"}
   @@win.refresh
-  @@dbgi = 0
+  @@dbgi = 1
+  @@debug.setpos(0, 100)
+  @@debug << "   #### Log: ####"
   @@dbglst.each {|a|
     @@debug.setpos(@@dbgi,100)
     @@debug << "#{a}\n"
@@ -36,7 +38,7 @@ Y88b  d88P 888 \"88b Y88b 888 Y88b 888 d88P 888  888 888 888 \"88b Y8b.     888
 end
 
 def skywalker_end
-  @@debug << "Done!"
+  @@debug << "Done! Press any key to quit."
   skywalker_update
   @@win.getch
   @@win.close
@@ -90,7 +92,7 @@ loop do
 a = 0
 while(a<=10)
 @@control["servo"] = a
-Fiber.yield "call Derp"
+Fiber.yield "call Rone"
 a += 1
 
 end
@@ -98,20 +100,20 @@ Fiber.yield "wait 5"
 Fiber.yield :end
 end
 end
-Derp = Fiber.new do
+Rone = Fiber.new do
 loop do
 if (@@control["motor"]==100)
 @@control["motor"] = 50
 
 else
-Fiber.yield "call Derpaderp"
+Fiber.yield "call Rtwo"
 
 end
 Fiber.yield "wait 1"
 Fiber.yield :end
 end
 end
-Derpaderp = Fiber.new do
+Rtwo = Fiber.new do
 loop do
 @@control["servo2"] += 10
 @@control["motor"] = 100

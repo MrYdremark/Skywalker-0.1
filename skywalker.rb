@@ -1,3 +1,4 @@
+#!/usr/bin/ruby
 require './parser.rb'
 require './nodes.rb'
 require 'fiber'
@@ -201,29 +202,6 @@ class Skywalker
     end
   end
 
-  def done(str)
-    ["quit","exit","bye",""].include?(str.chomp)
-  end
-  
-  def run
-    print "[skywalker] "
-    str = gets
-    if done(str) then
-      puts "Bye."
-    else
-      @@res = (@skywalker.parse str)
-      puts "=> #{@@res.evaluate}"
-      # @skywalker.parse(str)
-      run
-    end
-  end
-
-  def runfile(filename)
-    code = File.read(filename)
-    @@res = (@skywalker.parse code)
-    puts "=> #{@@res.evaluate}"
-  end
-
   def compile(filename)
     code = File.read(filename)
     @@res = (@skywalker.parse code)
@@ -242,3 +220,5 @@ class Skywalker
     end
   end
 end
+
+Skywalker.new.compile(ARGV.first)

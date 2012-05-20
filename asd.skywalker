@@ -9,22 +9,22 @@ routine Main
 	a = 0;	
 	while(a <= 10)
 		Controls[servo] = a;
-		call(Derp);
+		call(Rone);
 	 	a += 1;
 	end
 	wait(5);
 end
 
-routine Derp
+routine Rone
 	if(Controls[motor] == 100)
 		Controls[motor] = 50;
 	else
-		call(Derpaderp);
+		call(Rtwo);
 	end
 	wait(1);
 end		
 
-routine Derpaderp
+routine Rtwo
 	Controls[servo2] += 10;
 	Controls[motor] = 100;
 end
